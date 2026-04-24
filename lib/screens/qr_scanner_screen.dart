@@ -20,7 +20,6 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _scanned = false;
-  DateTime? _lastInvalidSnack;
 
   void _onDetect(BarcodeCapture capture) {
     if (_scanned) return;
@@ -28,7 +27,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (raw == null || raw.isEmpty) return;
     final pole = parsePoleQrPayloadFromBase64(raw);
     if (pole == null) {
-      _maybeInvalidSnack();
       return;
     }
     final station = getStationById(pole.stationId);
@@ -52,21 +50,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     };
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => next),
-    );
-  }
-
-  void _maybeInvalidSnack() {
-    final now = DateTime.now();
-    if (_lastInvalidSnack != null && now.difference(_lastInvalidSnack!) < const Duration(seconds: 2)) {
-      return;
-    }
-    _lastInvalidSnack = now;
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(t(AppStrings.qrInvalidCode)),
-        duration: const Duration(seconds: 2),
-      ),
     );
   }
 

@@ -98,7 +98,8 @@ PoleQrPayload? _polePayloadFromDecodedJson(String utf8Json) {
     final m = Map<String, dynamic>.from(decoded);
     final id = m['stationId'] as String?;
     if (id == null || id.isEmpty) return null;
-    final slot = _slotFromPoleJson(m['slot']);
+    // Compatibility fallback for external generators with a typo: `slod` instead of `slot`.
+    final slot = _slotFromPoleJson(m['slot'] ?? m['slod']);
     if (slot == null) return null;
     return PoleQrPayload(stationId: id, slot: slot);
   } catch (_) {
