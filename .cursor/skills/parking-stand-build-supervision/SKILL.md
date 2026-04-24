@@ -1,6 +1,6 @@
 ---
 name: parking-stand-build-supervision
-description: Nadzoruje proces budowy aplikacji stanowisk parkingowych (rower). Używać przy rozwijaniu parking_stand_app, implementacji flow QR/stacja/Firebase, integracji mobile–Raspberry Pi–chmura oraz przy code review lub planowaniu zadań w tym projekcie.
+description: Nadzoruje proces budowy aplikacji stanowisk parkingowych (rower). Używać przy rozwijaniu mdm_sport, implementacji flow QR/stacja/Firebase, integracji mobile–Raspberry Pi–chmura oraz przy code review lub planowaniu zadań w tym projekcie.
 ---
 
 # Nadzór budowy aplikacji stanowisk parkingowych
@@ -84,7 +84,7 @@ Testy (w miarę implementacji):
 - [ ] Wygaśnięcie kodu po operacji RASP PI
 ```
 
-## Projekt (parking_stand_app)
+## Projekt (mdm_sport)
 
 - Aplikacja mobilna: **Flutter** (obecnie `lib/main.dart`, `pubspec.yaml`).
 - Przy dodawaniu zależności: np. `firebase_core`, `firebase_firestore`/`firebase_realtime_database`, `geolocator` (GPS), `qr_flutter` / `mobile_scanner` (QR), lokalna baza — uzasadnić wybór w kontekście powyższej architektury.

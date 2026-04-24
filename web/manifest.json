@@ -1,6 +1,6 @@
 {
-    "name": "parking_stand_app",
-    "short_name": "parking_stand_app",
+    "name": "mdm-sport",
+    "short_name": "mdm-sport",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

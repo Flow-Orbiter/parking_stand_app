@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:parking_stand_app/data/models/station.dart';
+import 'package:mdm_sport/data/models/station.dart';
 
 /// Proximity w metrach (ze skilla)
 const double kProximityMeters = 50.0;

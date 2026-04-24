@@ -1,19 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:parking_stand_app/data/local/app_storage.dart';
-import 'package:parking_stand_app/l10n/translations.dart';
-import 'package:parking_stand_app/data/location_helper.dart';
-import 'package:parking_stand_app/data/models/station.dart';
-import 'package:parking_stand_app/data/stations_repository.dart';
-import 'package:parking_stand_app/theme/app_theme.dart';
-import 'package:parking_stand_app/screens/active_reservations_screen.dart';
-import 'package:parking_stand_app/screens/qr_scanner_screen.dart';
-import 'package:parking_stand_app/screens/qr_show_screen.dart';
+import 'package:mdm_sport/data/firebase/user_firestore.dart';
+import 'package:mdm_sport/data/local/app_storage.dart';
+import 'package:mdm_sport/l10n/translations.dart';
+import 'package:mdm_sport/data/location_helper.dart';
+import 'package:mdm_sport/data/models/station.dart';
+import 'package:mdm_sport/data/stations_repository.dart';
+import 'package:mdm_sport/theme/app_theme.dart';
+import 'package:mdm_sport/screens/qr_scanner_screen.dart';
+import 'package:mdm_sport/data/station_entry_flow.dart';
+import 'package:mdm_sport/auth/auth_service.dart';
+import 'package:mdm_sport/screens/help_screen.dart';
+import 'package:mdm_sport/util/app_links.dart';
+import 'package:mdm_sport/widgets/language_picker_chips.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const LatLng _defaultCenter = LatLng(51.1079, 17.0385);
 const double _defaultZoom = 12.0;
+
+/// Wysokość dolnej belki (padding + dwa przyciski) — pod kontrolki mapy i kartę stacji.
+const double _kBottomActionBarExtent = 92.0;
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -60,6 +69,16 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _searchFocusNode.addListener(_onSearchFocusChange);
+    final u = FirebaseAuth.instance.currentUser;
+    if (u != null) {
+      UserFirestoreRepository()
+          .ensureUserDocument(u)
+          .catchError((Object e, StackTrace st) {
+        if (kDebugMode) {
+          debugPrint('Firestore ensureUserDocument: $e\n$st');
+        }
+      });
+    }
   }
 
   @override
@@ -116,11 +135,11 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Future<void> _openQrScanner() async {
+  Future<void> _openQrScanner(StationEntryFlow flow) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+      MaterialPageRoute<void>(builder: (_) => QrScannerScreen(flow: flow)),
     );
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> _navigateToStation(Station station) async {
@@ -136,6 +155,8 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.paddingOf(context);
+    // Pasek wyszukiwania: SafeArea + wewn. padding + ~wysokość pola (nie stałe 64 px — lepsze przy Dynamic Island).
+    final searchBarBottomY = padding.top + 8 + 52 + 8;
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -153,6 +174,7 @@ class _MapScreenState extends State<MapScreen> {
                       target: _defaultCenter,
                       zoom: _defaultZoom,
                     ),
+                    mapType: MapType.normal,
                     onMapCreated: (c) => _mapController = c,
                     onTap: (_) => setState(() => _selectedStation = null),
                     zoomControlsEnabled: false,
@@ -163,40 +185,13 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
               ),
-              if (AppStorage.lastBikeStationId == null)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      child: Material(
-                        color: AppColors.accentYellow.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          child: Text(
-                            t(AppStrings.mapBikeBanner),
-                            style: const TextStyle(
-                              color: AppColors.textOnAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               Positioned(
-                top: AppStorage.lastBikeStationId == null ? 72 : 0,
+                top: 0,
                 left: 0,
                 right: 0,
                 child: SafeArea(
                   bottom: false,
-                  child: Padding(
+                    child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Material(
                       color: AppColors.surfaceWhite,
@@ -222,7 +217,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
               if (_showSearchResults) ...[
                 Positioned(
-                  top: (AppStorage.lastBikeStationId == null ? 72 : 0) + 64 + 8,
+                  top: searchBarBottomY,
                   left: 0,
                   right: 0,
                   bottom: 0,
@@ -235,7 +230,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
                 Positioned(
-                  top: (AppStorage.lastBikeStationId == null ? 72 : 0) + 64 + 8,
+                  top: searchBarBottomY,
                   left: 16,
                   right: 16,
                   child: Material(
@@ -288,7 +283,7 @@ class _MapScreenState extends State<MapScreen> {
                 Positioned(
                   left: 16,
                   right: 16,
-                  bottom: padding.bottom + 24 + 72 + 12,
+                  bottom: padding.bottom + 16 + _kBottomActionBarExtent + 12,
                   child: Material(
                     color: AppColors.surfaceWhite,
                     borderRadius: BorderRadius.circular(12),
@@ -353,7 +348,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
               Positioned(
-                bottom: padding.bottom + 24 + 72,
+                bottom: padding.bottom + 16 + _kBottomActionBarExtent + 10,
                 right: padding.right + 16,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -393,79 +388,55 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               Positioned(
-                left: padding.left + 16,
-                right: padding.right + 16,
-                bottom: padding.bottom + 24,
+                left: padding.left + 12,
+                right: padding.right + 12,
+                bottom: padding.bottom + 12,
                 child: SafeArea(
                   top: false,
                   child: Material(
                     color: AppColors.surfaceWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    elevation: 2,
+                    borderRadius: BorderRadius.circular(20),
+                    elevation: 3,
                     shadowColor: AppColors.shadowLight,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(10.0),
                       child: Row(
                         children: [
                           Expanded(
-                            flex: 2,
-                            child: Material(
-                              color: AppColors.accentYellow,
-                              borderRadius: BorderRadius.circular(12),
-                                child: InkWell(
-                                onTap: _openQrScanner,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.qr_code_scanner, color: AppColors.textOnAccent),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        t(AppStrings.mapScan),
-                                        style: const TextStyle(
-                                          color: AppColors.textOnAccent,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            child: FilledButton.icon(
+                              onPressed: () => _openQrScanner(StationEntryFlow.park),
+                              icon: const Icon(Icons.qr_code_scanner, size: 22),
+                              label: Text(t(AppStrings.mapPark)),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accentYellowDark,
+                                foregroundColor: AppColors.textOnAccent,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
-                            flex: 1,
-                            child: Material(
-                              color: AppColors.surfaceWhite,
-                              borderRadius: BorderRadius.circular(12),
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const QrShowScreen()),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.key, color: AppColors.textPrimary),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        t(AppStrings.mapReceive),
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            child: FilledButton.icon(
+                              onPressed: () => _openQrScanner(StationEntryFlow.pickup),
+                              icon: const Icon(Icons.key_rounded, size: 22),
+                              label: Text(t(AppStrings.mapReceive)),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.textPrimary,
+                                foregroundColor: AppColors.surfaceWhite,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                             ),
@@ -480,12 +451,62 @@ class _MapScreenState extends State<MapScreen> {
           );
         },
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: AppColors.accentYellow),
+      drawer: _MapDrawer(
+        onLogout: () async {
+          try {
+            await AuthService().signOut();
+            if (context.mounted) Navigator.of(context).pop();
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$e')),
+              );
+            }
+          }
+        },
+        onOpenHelp: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const HelpScreen()),
+          );
+        },
+        onOpenPrivacy: () {
+          Navigator.of(context).pop();
+          if (context.mounted) {
+            launchExternalUrl(context, kPrivacyPolicyUri);
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _MapDrawer extends StatelessWidget {
+  const _MapDrawer({
+    required this.onLogout,
+    required this.onOpenHelp,
+    required this.onOpenPrivacy,
+  });
+
+  final Future<void> Function() onLogout;
+  final VoidCallback onOpenHelp;
+  final VoidCallback onOpenPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final phoneStr = user?.phoneNumber;
+    final phone = (phoneStr != null && phoneStr.isNotEmpty) ? phoneStr : null;
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DrawerHeader(
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            decoration: const BoxDecoration(color: AppColors.accentYellow),
+            child: Align(
+              alignment: Alignment.bottomLeft,
               child: Text(
                 t(AppStrings.mapMenu),
                 style: const TextStyle(
@@ -495,17 +516,151 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: Text(t(AppStrings.mapActiveReservations)),
-              onTap: () {
-                Scaffold.of(context).closeDrawer();
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ActiveReservationsScreen()),
-                );
-              },
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  t(AppStrings.mapDrawerProfile),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<Map<String, dynamic>?>(
+                  stream: user != null
+                      ? UserFirestoreRepository().userProfileDataStream(user.uid)
+                      : Stream<Map<String, dynamic>?>.value(null),
+                  builder: (context, snap) {
+                    final d = snap.data;
+                    final nameInDb = (d?['displayName'] as String?)?.trim();
+                    final name = (nameInDb != null && nameInDb.isNotEmpty)
+                        ? nameInDb
+                        : (user?.displayName?.trim().isNotEmpty == true
+                            ? user!.displayName!
+                            : null);
+                    String? emailOut = user?.email;
+                    if (emailOut == null || emailOut.isEmpty) {
+                      final c = (d?['contactEmail'] as String?)?.trim();
+                      if (c != null && c.isNotEmpty) emailOut = c;
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ReadOnlyField(
+                          label: t(AppStrings.mapDrawerName),
+                          value: name ?? t(AppStrings.mapDrawerFieldEmpty),
+                        ),
+                        const SizedBox(height: 4),
+                        _ReadOnlyField(
+                          label: t(AppStrings.mapDrawerEmail),
+                          value: (emailOut != null && emailOut.isNotEmpty)
+                              ? emailOut
+                              : t(AppStrings.mapDrawerFieldEmpty),
+                        ),
+                        const SizedBox(height: 4),
+                        _ReadOnlyField(
+                          label: t(AppStrings.mapDrawerPhone),
+                          value: phone ?? t(AppStrings.mapDrawerFieldEmpty),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  t(AppStrings.mapDrawerLanguage),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const LanguagePickerChips(style: LanguagePickerChipsStyle.drawer),
+                const SizedBox(height: 8),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.textPrimary),
+                  title: Text(
+                    t(AppStrings.legalPrivacyPolicy),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+                  ),
+                  onTap: onOpenPrivacy,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.help_outline, color: AppColors.textPrimary),
+                  title: Text(
+                    t(AppStrings.mapDrawerHelp),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+                  ),
+                  onTap: onOpenHelp,
+                ),
+              ],
             ),
-          ],
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: FilledButton.icon(
+                onPressed: onLogout,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.textPrimary,
+                  foregroundColor: AppColors.surfaceWhite,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                icon: const Icon(Icons.logout, size: 20),
+                label: Text(
+                  t(AppStrings.mapDrawerLogout),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadOnlyField extends StatelessWidget {
+  const _ReadOnlyField({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: AppInputStyles.lightInputDecoration().copyWith(
+        labelText: label,
+        fillColor: const Color(0xFFF2F2F2),
+        enabled: false,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          color: AppColors.textSecondary,
+        ),
+      ),
+      child: Text(
+        value,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 16,
+          color: AppColors.textPrimary,
         ),
       ),
     );

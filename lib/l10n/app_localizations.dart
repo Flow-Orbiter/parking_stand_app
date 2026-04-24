@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parking_stand_app/l10n/translations.dart' as l10n;
+import 'package:mdm_sport/l10n/translations.dart' as l10n;
 
 /// Udostępnia bieżący język i [t] w dół drzewa. Przełączenie języka przez [onLocaleChanged].
 class L10nScope extends InheritedWidget {

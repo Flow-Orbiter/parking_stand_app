@@ -1,4 +1,4 @@
-package com.parkingstand.parking_stand_app
+package com.floworbiter.baps
 
 import io.flutter.embedding.android.FlutterActivity
 

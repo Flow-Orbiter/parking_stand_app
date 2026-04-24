@@ -23,6 +23,11 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# App Store Connect API (nigdy nie commituj klucza .p8)
+private_keys/
+AuthKey_*.p8
+*.p8
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
@@ -43,3 +48,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Xcode/Flutter iOS lokalne artefakty
+ios/build/

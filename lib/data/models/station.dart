@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-/// Model stacji parkingowej. Format payloadu QR ze słupka: JSON z "stationId" (lub "id").
+/// Model stacji parkingowej. QR ze słupka: base64(UTF-8 → JSON) z "stationId" (lub "id").
 class Station {
   const Station({
     required this.id,

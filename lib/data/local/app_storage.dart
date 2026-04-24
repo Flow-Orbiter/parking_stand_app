@@ -1,8 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:parking_stand_app/data/models/reservation.dart';
+import 'package:mdm_sport/data/models/reservation.dart';
 
 /// Klucze boxów Hive
-const String _boxName = 'parking_stand_app';
+const String _boxName = 'mdm_sport';
 const String _keyLastBikeStationId = 'lastBikeStationId';
 const String _keyReservations = 'reservations';
 const String _keyLanguageCode = 'languageCode';

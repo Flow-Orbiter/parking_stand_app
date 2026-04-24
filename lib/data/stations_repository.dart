@@ -1,4 +1,4 @@
-import 'package:parking_stand_app/data/models/station.dart';
+import 'package:mdm_sport/data/models/station.dart';
 
 /// Lista stacji – na razie stała (później z Firebase).
 /// Format payloadu QR ze słupka: {"stationId": "1"} lub {"id": "1"}.

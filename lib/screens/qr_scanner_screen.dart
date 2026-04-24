@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:parking_stand_app/data/local/app_storage.dart';
-import 'package:parking_stand_app/l10n/translations.dart';
-import 'package:parking_stand_app/data/qr_payload.dart';
-import 'package:parking_stand_app/data/stations_repository.dart';
-import 'package:parking_stand_app/theme/app_theme.dart';
+import 'package:mdm_sport/l10n/translations.dart';
+import 'package:mdm_sport/data/qr_payload.dart';
+import 'package:mdm_sport/data/station_entry_flow.dart';
+import 'package:mdm_sport/data/stations_repository.dart';
+import 'package:mdm_sport/screens/station_park_flow_screen.dart';
+import 'package:mdm_sport/screens/station_pickup_flow_screen.dart';
+import 'package:mdm_sport/theme/app_theme.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  const QrScannerScreen({super.key, this.flow = StationEntryFlow.park});
+
+  final StationEntryFlow flow;
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -16,36 +20,54 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _scanned = false;
+  DateTime? _lastInvalidSnack;
 
   void _onDetect(BarcodeCapture capture) {
     if (_scanned) return;
     final raw = capture.barcodes.firstOrNull?.rawValue;
     if (raw == null || raw.isEmpty) return;
-    final stationId = parseStationIdFromQr(raw);
-    if (stationId == null) return;
-    final station = getStationById(stationId);
-    if (station == null) return;
+    final pole = parsePoleQrPayloadFromBase64(raw);
+    if (pole == null) {
+      _maybeInvalidSnack();
+      return;
+    }
+    final station = getStationById(pole.stationId);
+    if (station == null) {
+      _scanned = true;
+      _controller.stop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(AppStrings.qrStationNotInApp).replaceFirst('%s', pole.stationId))),
+        );
+        Navigator.of(context).pop();
+      }
+      return;
+    }
     _scanned = true;
     _controller.stop();
-    AppStorage.setLastBikeStationId(stationId);
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    final next = switch (widget.flow) {
+      StationEntryFlow.park => StationParkOpenStepScreen(station: station, initialSlot: pole.slot),
+      StationEntryFlow.pickup => StationPickupScreen(station: station, initialSlot: pole.slot),
+    };
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => next),
+    );
   }
 
-  void _openManualEntry() async {
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => const _ManualStationDialog(),
-    );
-    if (result == null || !mounted) return;
-    final station = getStationById(result);
-    if (station != null) {
-      AppStorage.setLastBikeStationId(result);
-      if (mounted) Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(AppStrings.qrStationNotFound).replaceFirst('%s', result))),
-      );
+  void _maybeInvalidSnack() {
+    final now = DateTime.now();
+    if (_lastInvalidSnack != null && now.difference(_lastInvalidSnack!) < const Duration(seconds: 2)) {
+      return;
     }
+    _lastInvalidSnack = now;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t(AppStrings.qrInvalidCode)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -117,36 +139,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Material(
-                    color: AppColors.darkSecondaryBg,
-                    borderRadius: BorderRadius.circular(24),
-                    child: InkWell(
-                      onTap: _openManualEntry,
-                      borderRadius: BorderRadius.circular(24),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.edit_note, color: AppColors.textOnDark, size: 22),
-                            const SizedBox(width: 10),
-                            Text(
-                              t(AppStrings.qrEnterManually),
-                              style: const TextStyle(
-                                color: AppColors.textOnDark,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -173,61 +165,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ManualStationDialog extends StatefulWidget {
-  const _ManualStationDialog();
-
-  @override
-  State<_ManualStationDialog> createState() => _ManualStationDialogState();
-}
-
-class _ManualStationDialogState extends State<_ManualStationDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.darkSecondaryBg,
-      title: Text(
-        t(AppStrings.qrEnterStationNumber),
-        style: const TextStyle(color: AppColors.textOnDark),
-      ),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        style: const TextStyle(color: AppColors.textOnDark),
-        decoration: const InputDecoration(
-          hintText: 'np. 1',
-          hintStyle: TextStyle(color: AppColors.textPlaceholder),
-        ),
-        onSubmitted: (v) {
-          final id = v.trim();
-          if (id.isNotEmpty) Navigator.of(context).pop(id);
-        },
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t(AppStrings.qrCancel), style: const TextStyle(color: AppColors.textOnDark)),
-        ),
-        FilledButton(
-          onPressed: () {
-            final id = _controller.text.trim();
-            if (id.isNotEmpty) Navigator.of(context).pop(id);
-          },
-          child: Text(t(AppStrings.qrOk)),
-        ),
-      ],
     );
   }
 }

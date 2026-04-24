@@ -28,5 +28,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Skanowanie kodów QR na stacjach parkingowych.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Położenie na mapie stacji (okolica użytkownika).</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Lokalizacja służy do mapy stacji; system może wymagać tego opisu także przy użyciu aplikacji na pierwszym planie.</string>
 </dict>
 </plist>

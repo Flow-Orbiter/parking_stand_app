@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:parking_stand_app/data/local/app_storage.dart';
-import 'package:parking_stand_app/l10n/translations.dart';
-import 'package:parking_stand_app/data/models/reservation.dart';
-import 'package:parking_stand_app/theme/app_theme.dart';
+import 'package:mdm_sport/data/local/app_storage.dart';
+import 'package:mdm_sport/l10n/translations.dart';
+import 'package:mdm_sport/data/models/reservation.dart';
+import 'package:mdm_sport/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ActiveReservationsScreen extends StatefulWidget {

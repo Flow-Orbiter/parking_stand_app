@@ -1,0 +1,186 @@
+{
+  "project_info": {
+    "project_number": "435452635733",
+    "project_id": "mdm-sport",
+    "storage_bucket": "mdm-sport.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435452635733:android:96bc888e2be239cb8a82dc",
+        "android_client_info": {
+          "package_name": "com.floworbiter.baps"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "435452635733-qqqnn94tc8au6rojoo3cblthedd4voqk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.floworbiter.baps",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "435452635733-v2i7i4ag86fhtpf9jorue1l7j2tacv3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.floworbiter.baps",
+            "certificate_hash": "6a6ac350d39cfdc73a00055dde881a617660f2ac"
+          }
+        },
+        {
+          "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGqFkHQMJERUe0UGSnGl-64UgRaBGACvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "435452635733-8afefeug7h2d9bui5e08ad6omfo94cvs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.parkingstand.parkingStandApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435452635733:android:ff349c0bb9b02ee08a82dc",
+        "android_client_info": {
+          "package_name": "com.floworbiter.dashboard.baps"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "435452635733-shnhca7ihn5i02chkjed8gne10val8ts.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.floworbiter.dashboard.baps",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGqFkHQMJERUe0UGSnGl-64UgRaBGACvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "435452635733-8afefeug7h2d9bui5e08ad6omfo94cvs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.parkingstand.parkingStandApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435452635733:android:f32bbdb6258ba3138a82dc",
+        "android_client_info": {
+          "package_name": "com.mycompany.mdmsportadmin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "435452635733-dlm93a3hcuiblrsfql07qebq11ferl4b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.mdmsportadmin",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGqFkHQMJERUe0UGSnGl-64UgRaBGACvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "435452635733-8afefeug7h2d9bui5e08ad6omfo94cvs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.parkingstand.parkingStandApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435452635733:android:2ad426ec2391017d8a82dc",
+        "android_client_info": {
+          "package_name": "com.parkingstand.parking_stand_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGqFkHQMJERUe0UGSnGl-64UgRaBGACvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "435452635733-hdgogibcgbg92m7g33gek3pq42jhdt7n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "435452635733-8afefeug7h2d9bui5e08ad6omfo94cvs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.parkingstand.parkingStandApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
