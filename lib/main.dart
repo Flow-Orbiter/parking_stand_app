@@ -4,9 +4,12 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mdm_sport/data/local/app_storage.dart';
+import 'package:mdm_sport/data/stations_repository.dart';
+import 'package:mdm_sport/data/stations_sync_service.dart';
 import 'package:mdm_sport/debug_agent_log.dart';
 import 'package:mdm_sport/firebase_options.dart';
 import 'package:mdm_sport/l10n/app_localizations.dart';
@@ -38,14 +41,35 @@ void main() {
       };
       // #endregion
       await AppStorage.init();
+      await initializeStationsFromCache();
       var firebaseOk = false;
       try {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
+        // Web needs explicit options. On iOS/Android the native config files often
+        // create [DEFAULT] before Dart runs; passing Dart options that do not match
+        // native (e.g. databaseURL) triggers [core/duplicate-app], not a true double init.
+        if (kIsWeb) {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+        } else {
+          try {
+            await Firebase.initializeApp();
+          } on FirebaseException catch (e) {
+            if (e.code == 'not-initialized') {
+              await Firebase.initializeApp(
+                options: DefaultFirebaseOptions.currentPlatform,
+              );
+            } else {
+              rethrow;
+            }
+          }
+        }
         firebaseOk = true;
+        await AppStorage.setLastFirebaseInitError(null);
+        await StationsSyncService().syncStationsFromFirestore();
       } catch (e, st) {
-        debugPrint('Firebase.initializeApp: $e\n$st');
+        debugPrint('Firebase start: $e\n$st');
+        await AppStorage.setLastFirebaseInitError('$e');
       }
       runApp(MyApp(firebaseEnabled: firebaseOk));
     },
@@ -104,14 +128,19 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class _AuthRoot extends StatelessWidget {
+class _AuthRoot extends StatefulWidget {
   const _AuthRoot({required this.firebaseEnabled});
 
   final bool firebaseEnabled;
 
   @override
+  State<_AuthRoot> createState() => _AuthRootState();
+}
+
+class _AuthRootState extends State<_AuthRoot> {
+  @override
   Widget build(BuildContext context) {
-    if (!firebaseEnabled) {
+    if (!widget.firebaseEnabled) {
       return LoginScreen(firebaseEnabled: false);
     }
     return StreamBuilder<User?>(
@@ -126,10 +155,47 @@ class _AuthRoot extends StatelessWidget {
         if (user == null) {
           return const LoginScreen(firebaseEnabled: true);
         }
-        if (!hasVerifiedAppPhone(user)) {
+        return _PostAuthStationSyncLoader(
+          key: ValueKey<String>('${user.uid}:${hasVerifiedAppPhone(user)}'),
+          user: user,
+        );
+      },
+    );
+  }
+}
+
+/// Jeden przebieg syncu stacji (Firestore) na użytkownika (świeży [State] przy zmianie [user.uid]) + odświeżony token.
+class _PostAuthStationSyncLoader extends StatefulWidget {
+  const _PostAuthStationSyncLoader({super.key, required this.user});
+
+  final User user;
+
+  @override
+  State<_PostAuthStationSyncLoader> createState() => _PostAuthStationSyncLoaderState();
+}
+
+class _PostAuthStationSyncLoaderState extends State<_PostAuthStationSyncLoader> {
+  late final Future<void> _ready = _run();
+
+  Future<void> _run() async {
+    await widget.user.getIdToken(true);
+    await StationsSyncService().syncStationsFromFirestore();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _ready,
+      builder: (context, syncSnapshot) {
+        if (syncSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!hasVerifiedAppPhone(widget.user)) {
           return const PhoneVerificationRequiredScreen();
         }
-        return ProfileMapGate(user: user);
+        return ProfileMapGate(user: widget.user);
       },
     );
   }

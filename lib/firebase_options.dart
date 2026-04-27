@@ -25,6 +25,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '435452635733',
     projectId: 'mdm-sport',
     authDomain: 'mdm-sport.firebaseapp.com',
+    databaseURL: 'https://mdm-sport-default-rtdb.firebaseio.com',
     storageBucket: 'mdm-sport.firebasestorage.app',
     measurementId: 'G-RVJ47KTQJG',
   );
@@ -34,6 +35,7 @@ class DefaultFirebaseOptions {
     appId: '1:435452635733:android:96bc888e2be239cb8a82dc',
     messagingSenderId: '435452635733',
     projectId: 'mdm-sport',
+    databaseURL: 'https://mdm-sport-default-rtdb.firebaseio.com',
     storageBucket: 'mdm-sport.firebasestorage.app',
   );
 
@@ -42,6 +44,7 @@ class DefaultFirebaseOptions {
     appId: '1:435452635733:ios:5bc797e2c6a986be8a82dc',
     messagingSenderId: '435452635733',
     projectId: 'mdm-sport',
+    databaseURL: 'https://mdm-sport-default-rtdb.firebaseio.com',
     storageBucket: 'mdm-sport.firebasestorage.app',
     androidClientId: '435452635733-4t8m4ji2irmj292mdufrc51ge84khlk4.apps.googleusercontent.com',
     iosClientId: '435452635733-8afefeug7h2d9bui5e08ad6omfo94cvs.apps.googleusercontent.com',

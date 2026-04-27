@@ -6,6 +6,8 @@ const String _boxName = 'mdm_sport';
 const String _keyLastBikeStationId = 'lastBikeStationId';
 const String _keyReservations = 'reservations';
 const String _keyLanguageCode = 'languageCode';
+const String _keyStations = 'stations';
+const String _keyLastFirebaseInitError = 'lastFirebaseInitError';
 
 /// Lokalna baza (offline-first): ostatnia stacja roweru, rezerwacje.
 class AppStorage {
@@ -54,4 +56,28 @@ class AppStorage {
   // ----- Język (PL/EN) -----
   static String get languageCode => (box.get(_keyLanguageCode) as String?) ?? 'pl';
   static Future<void> setLanguageCode(String code) => box.put(_keyLanguageCode, code == 'en' ? 'en' : 'pl');
+
+  // ----- Stacje (cache offline) -----
+  static List<Map<String, dynamic>> get cachedStations {
+    final raw = box.get(_keyStations);
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<void> setCachedStations(List<Map<String, dynamic>> stations) async {
+    await box.put(_keyStations, stations);
+  }
+
+  // ----- Diagnostyka Firebase (ostatni błąd inicjalizacji) -----
+  /// Bezpieczny przed [init] (np. testy widgetowe); bez otwartego boxa zwraca `null`.
+  static String? get lastFirebaseInitError {
+    final b = _box;
+    if (b == null) return null;
+    return b.get(_keyLastFirebaseInitError) as String?;
+  }
+
+  static Future<void> setLastFirebaseInitError(String? message) => box.put(_keyLastFirebaseInitError, message);
 }

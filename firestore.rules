@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Profil aplikacji — [UserFirestoreRepository] zapisuje pod users/{uid}.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /stations/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /Stations/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

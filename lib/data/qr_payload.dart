@@ -1,12 +1,15 @@
 // Format payloadu QR (mobile ↔ stacja RASP PI).
 //
-// Słupek: QR = **obfuskacja** standardowego base64(UTF-8 → JSON) z polami `stationId` i `slot`.
+// Słupek: QR = **obfuskacja** standardowego base64(UTF-8 → JSON) z polami `stationId` (lub `id`) i `slot`.
+// Akceptowane też: zwykły Base64, surowy JSON, URL z `?param=` lub path/fragmentem, base64 z białymi znakami.
 // Aplikacja → czytnik: base64(UTF-8 → JSON) z: `action`, `stationId`, `slot`, `ts`, `deviceId` — obfuskacja poniżej.
 //
 // Obfuskacja (zgodna czytnik ↔ telefon; literał `0` w base64 → `~` zanim 1..8, żeby nie kolidować z `1`→`0`):
 //   1→0  2→1  3→2  4→3  5→(  6→)  7→@  8→$
 
 import 'dart:convert';
+
+import 'package:mdm_sport/data/stations_repository.dart';
 
 /// Akcja w kodzie skanowanym przez czytnik stacji.
 enum QrStationAction {
@@ -82,29 +85,117 @@ class PoleQrPayload {
 }
 
 int? _slotFromPoleJson(dynamic v) {
-  final n = switch (v) {
-    final int i => i,
-    final String s => int.tryParse(s),
-    _ => null,
-  };
-  if (n == null || n < 1) return null;
-  return n;
+  if (v == null) return null;
+  if (v is int) {
+    if (v < 1) return null;
+    return v;
+  }
+  if (v is double) {
+    if (v < 1 || v != v.truncateToDouble()) return null;
+    return v.toInt();
+  }
+  if (v is String) {
+    final n = int.tryParse(v.trim());
+    if (n == null || n < 1) return null;
+    return n;
+  }
+  return null;
+}
+
+/// Stacja: `stationId` (preferowane), `id` lub `station_id`; liczby w JSON (np. `1`) też.
+String? _stringFromIdField(Object? v) {
+  if (v == null) return null;
+  if (v is String) {
+    final s = v.trim();
+    return s.isEmpty ? null : s;
+  }
+  if (v is int) return v.toString();
+  if (v is double) {
+    if (v != v.truncateToDouble()) return null;
+    return v.toInt().toString();
+  }
+  return null;
+}
+
+PoleQrPayload? _polePayloadFromMap(Map<String, dynamic> m) {
+  final id = _stringFromIdField(
+    m['stationId'] ?? m['id'] ?? m['station_id'],
+  );
+  if (id == null) return null;
+  // `slod` = literówka; niektóre czytniki: `stand` jako numer slotu
+  final slot = _slotFromPoleJson(
+    m['slot'] ?? m['slod'] ?? m['stand'] ?? m['standNumber'],
+  );
+  if (slot == null) return null;
+  return PoleQrPayload(stationId: normalizeStationId(id), slot: slot);
 }
 
 PoleQrPayload? _polePayloadFromDecodedJson(String utf8Json) {
   try {
     final dynamic decoded = jsonDecode(utf8Json);
     if (decoded is! Map) return null;
-    final m = Map<String, dynamic>.from(decoded);
-    final id = m['stationId'] as String?;
-    if (id == null || id.isEmpty) return null;
-    // Compatibility fallback for external generators with a typo: `slod` instead of `slot`.
-    final slot = _slotFromPoleJson(m['slot'] ?? m['slod']);
-    if (slot == null) return null;
-    return PoleQrPayload(stationId: id, slot: slot);
+    return _polePayloadFromMap(Map<String, dynamic>.from(decoded));
   } catch (_) {
     return null;
   }
+}
+
+PoleQrPayload? _tryParsePoleFromJsonStringCompacted(String s) {
+  if (!s.contains('{')) return null;
+  final c = s.replaceAll(RegExp(r'\s+'), '');
+  if (!c.startsWith('{')) return null;
+  return _polePayloadFromDecodedJson(c);
+}
+
+/// Pełny tekst QR, wariant bez białych znaków, fragmenty z [Uri] (path/query/fragment).
+List<String> _scanPayloadCandidates(String raw) {
+  final seen = <String>{};
+  final out = <String>[];
+  void add2(String? s) {
+    if (s == null) return;
+    for (final variant in {s.trim(), s.trim().replaceAll(RegExp(r'\s+'), '')}) {
+      if (variant.isEmpty) continue;
+      if (seen.add(variant)) out.add(variant);
+    }
+  }
+
+  add2(raw);
+  final t = raw.trim();
+  final uri = Uri.tryParse(t);
+  if (uri != null && uri.hasScheme) {
+    for (final v in uri.queryParameters.values) {
+      add2(v);
+    }
+    for (final seg in uri.pathSegments) {
+      add2(seg);
+    }
+    if (uri.hasFragment) {
+      add2(uri.fragment);
+    }
+    if (uri.path.isNotEmpty) {
+      final p = uri.path;
+      if (p.startsWith('/')) {
+        add2(p.substring(1));
+      } else {
+        add2(p);
+      }
+    }
+  }
+  return out;
+}
+
+PoleQrPayload? _tryParsePoleFromCandidate(String candidate) {
+  final t = candidate.trim();
+  if (t.isEmpty) return null;
+  if (t.trimLeft().startsWith('{')) {
+    final fromJson = _polePayloadFromDecodedJson(t);
+    if (fromJson != null) return fromJson;
+  }
+  final fromCompactJson = _tryParsePoleFromJsonStringCompacted(t);
+  if (fromCompactJson != null) return fromCompactJson;
+  final compact = t.replaceAll(RegExp(r'[\n\r\t ]'), '');
+  return _parsePolePayloadFromRaw(compact, obfuscated: false) ??
+      _parsePolePayloadFromRaw(compact, obfuscated: true);
 }
 
 /// Parsuje treść QR: najpierw zwykły base64 (legacy), potem base64 po [deobfuscateBase64FromQr].
@@ -119,12 +210,14 @@ PoleQrPayload? _parsePolePayloadFromRaw(String raw, {required bool obfuscated}) 
   }
 }
 
-/// Parsuje base64 w QR słupka: JSON musi mieć `stationId` i `slot` (liczba całkowita ≥ 1).
-/// Próbuje zwykłego base64, potem wersji po [deobfuscateBase64FromQr].
+/// Parsuje treść ze skanera: JSON (także w URL), base64, obfuskowany base64 (telefon/stacja zgodne z [deobfuscateBase64FromQr]).
 PoleQrPayload? parsePoleQrPayloadFromBase64(String raw) {
   if (raw.trim().isEmpty) return null;
-  return _parsePolePayloadFromRaw(raw, obfuscated: false) ??
-      _parsePolePayloadFromRaw(raw, obfuscated: true);
+  for (final candidate in _scanPayloadCandidates(raw)) {
+    final p = _tryParsePoleFromCandidate(candidate);
+    if (p != null) return p;
+  }
+  return null;
 }
 
 /// JSON do zakodowania w QR (czytnik stacji) dla akcji otwórz / zamknij.

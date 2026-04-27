@@ -22,6 +22,8 @@ abstract final class AppStrings {
   static const String profileSetupEmailError = 'profileSetupEmailError';
   static const String profileSetupSave = 'profileSetupSave';
   static const String profileSetupNameError = 'profileSetupNameError';
+  static const String profileGateLoadError = 'profileGateLoadError';
+  static const String actionRetry = 'actionRetry';
   static const String mapDrawerName = 'mapDrawerName';
   static const String loginPhoneMandatoryInfo = 'loginPhoneMandatoryInfo';
   static const String phoneRequiredTitle = 'phoneRequiredTitle';
@@ -35,6 +37,9 @@ abstract final class AppStrings {
   static const String legalPrivacyPolicy = 'legalPrivacyPolicy';
   static const String helpPrivacySiteLabel = 'helpPrivacySiteLabel';
   static const String loginFirebaseMissing = 'loginFirebaseMissing';
+  static const String loginFirebaseDetailLabel = 'loginFirebaseDetailLabel';
+  static const String loginHeroSubtitle = 'loginHeroSubtitle';
+  static const String loginChangePhone = 'loginChangePhone';
   static const String loginLanguagePl = 'loginLanguagePl';
   static const String loginLanguageEn = 'loginLanguageEn';
   static const String mapSearchHint = 'mapSearchHint';
@@ -58,13 +63,11 @@ abstract final class AppStrings {
   static const String qrOk = 'qrOk';
   static const String qrInvalidCode = 'qrInvalidCode';
   static const String qrStationNotInApp = 'qrStationNotInApp';
+  static const String qrResolvingStation = 'qrResolvingStation';
   static const String parkOpenPageTitle = 'parkOpenPageTitle';
   static const String parkOpenShort = 'parkOpenShort';
-  static const String parkOpenNextButton = 'parkOpenNextButton';
-  static const String parkClosePageTitle = 'parkClosePageTitle';
+  static const String stationFlowManualLockHint = 'stationFlowManualLockHint';
   static const String parkFlowQrOpenCaption = 'parkFlowQrOpenCaption';
-  static const String parkFlowQrCloseCaption = 'parkFlowQrCloseCaption';
-  static const String parkFlowCloseBeforeQr = 'parkFlowCloseBeforeQr';
   static const String parkFlowSlotHint = 'parkFlowSlotHint';
   static const String parkFlowDoneButton = 'parkFlowDoneButton';
   static const String pickupTitle = 'pickupTitle';
@@ -72,10 +75,6 @@ abstract final class AppStrings {
   static const String pickupIntro = 'pickupIntro';
   static const String pickupFlowSlotHint = 'pickupFlowSlotHint';
   static const String pickupFlowDoneButton = 'pickupFlowDoneButton';
-  static const String pickupLockNowButton = 'pickupLockNowButton';
-  static const String pickupClosePageTitle = 'pickupClosePageTitle';
-  static const String pickupCloseCaption = 'pickupCloseCaption';
-  static const String pickupCloseBeforeQr = 'pickupCloseBeforeQr';
   static const String reservationsTitle = 'reservationsTitle';
   static const String reservationsEmpty = 'reservationsEmpty';
   static const String reservationsStart = 'reservationsStart';
@@ -113,6 +112,9 @@ final Map<String, String> _pl = {
   AppStrings.profileSetupEmailError: 'Podaj poprawny adres e-mail',
   AppStrings.profileSetupSave: 'Zapisz i przejdź do mapy',
   AppStrings.profileSetupNameError: 'Wpisz imię i nazwisko',
+  AppStrings.profileGateLoadError:
+      'Nie udało się wczytać profilu (sprawdź połączenie z internetem albo zasady w Firebase).',
+  AppStrings.actionRetry: 'Spróbuj ponownie',
   AppStrings.loginPhoneMandatoryInfo:
       'Aby korzystać z aplikacji, wymagany jest zweryfikowany numer telefonu. Możesz zalogować się SMS albo Google/Apple — w drugim przypadku dokończ weryfikację numeru kodem SMS.',
   AppStrings.phoneRequiredTitle: 'Zweryfikuj numer telefonu',
@@ -125,7 +127,10 @@ final Map<String, String> _pl = {
   AppStrings.loginWithApple: 'Kontynuuj z Apple',
   AppStrings.loginAuxHint: 'Logowanie Google/Apple: w Firebase Auth włącz dostawców. Apple: w Xcode dodaj Sign in with Apple.',
   AppStrings.loginFirebaseMissing:
-      'Nie udało się zainicjować Firebase. Dodaj pliki z konsoli (google-services.json, GoogleService-Info.plist) i uruchom: flutterfire configure. Możesz tymczasowo wejść do mapy.',
+      'Nie udało się uruchomić Firebase (konfiguracja, sieć albo błąd inicjalizacji). Upewnij się, że w projekcie są google-services.json / GoogleService-Info.plist i używasz zgodnej konfiguracji. Możesz tymczasowo wejść do mapy.',
+  AppStrings.loginFirebaseDetailLabel: 'Szczegóły błędu:',
+  AppStrings.loginHeroSubtitle: 'Zaloguj się, aby korzystać z mapy stacji i parkingów.',
+  AppStrings.loginChangePhone: 'Zmień numer',
   AppStrings.loginLanguagePl: 'Polski',
   AppStrings.loginLanguageEn: 'English',
   AppStrings.mapSearchHint: 'Szukaj stacji, parkingu...',
@@ -150,25 +155,20 @@ final Map<String, String> _pl = {
   AppStrings.qrOk: 'OK',
   AppStrings.qrInvalidCode: 'Nieprawidłowy kod (wymagany Base64 z JSON)',
   AppStrings.qrStationNotInApp: 'Nieznana stacja w aplikacji: %s',
+  AppStrings.qrResolvingStation: 'Szukanie stacji…',
   AppStrings.parkOpenPageTitle: 'Zaparkuj',
   AppStrings.parkOpenShort: 'Ustaw rower w wyznaczonym miejscu, potem pokaż poniższy kod czytnikowi, aby otworzyć rygiel.',
-  AppStrings.parkOpenNextButton: 'Dalej: kod zamknięcia',
-  AppStrings.parkClosePageTitle: 'Zamknij rygiel',
+  AppStrings.stationFlowManualLockHint:
+      'Zamknięcie rygla po zaparkowaniu lub po odbiorze wykonujesz ręcznie przy stacji — w aplikacji nie ma osobnego kodu zamknięcia.',
   AppStrings.parkFlowQrOpenCaption: 'Kod: otwarcie',
-  AppStrings.parkFlowQrCloseCaption: 'Kod: zamknięcie (natychmiast pokaż czytnikowi)',
-  AppStrings.parkFlowCloseBeforeQr: 'Gdy wszystko gotowe, pokaż ten kod — zamyka rygiel natychmiast po stronie czytnika.',
   AppStrings.parkFlowSlotHint: 'Numer stanowiska (slot)',
   AppStrings.parkFlowDoneButton: 'Gotowe',
   AppStrings.pickupTitle: 'Odbierz',
   AppStrings.pickupOpenCaption: 'Kod: otwarcie stacji (pokaż czytnikowi, żeby odblokować)',
   AppStrings.pickupIntro:
-      'Pokaż kod otwarcia czytnikowi, wyjmij rower. Chcesz od razu zablokować pusty slot? Użyj przycisku z kodem zamknięcia.',
+      'Pokaż kod otwarcia czytnikowi i wyjmij rower. Rygiel po odbiorze zamknij ręcznie przy stacji.',
   AppStrings.pickupFlowSlotHint: 'Numer stanowiska (slot)',
   AppStrings.pickupFlowDoneButton: 'Gotowe',
-  AppStrings.pickupLockNowButton: 'Zamknij rygiel teraz (kod QR)',
-  AppStrings.pickupClosePageTitle: 'Zamknij po odbiorze',
-  AppStrings.pickupCloseCaption: 'Kod: zamknięcie',
-  AppStrings.pickupCloseBeforeQr: 'Pokaż ten kod czytnikowi od razu po wyciągnięciu roweru, jeśli chcesz zablokować pusty slot.',
   AppStrings.reservationsTitle: 'Aktywne rezerwacje',
   AppStrings.reservationsEmpty: 'Brak aktywnych rezerwacji.',
   AppStrings.reservationsStart: 'Start',
@@ -206,6 +206,9 @@ final Map<String, String> _en = {
   AppStrings.profileSetupEmailError: 'Enter a valid email address',
   AppStrings.profileSetupSave: 'Save and open map',
   AppStrings.profileSetupNameError: 'Enter your name',
+  AppStrings.profileGateLoadError:
+      'Could not load your profile. Check your internet connection and Firebase security rules.',
+  AppStrings.actionRetry: 'Try again',
   AppStrings.loginPhoneMandatoryInfo:
       'A verified phone number is required to use the app. Sign in with SMS, or with Google/Apple and then complete verification with an SMS code.',
   AppStrings.phoneRequiredTitle: 'Verify your phone number',
@@ -218,7 +221,10 @@ final Map<String, String> _en = {
   AppStrings.loginWithApple: 'Continue with Apple',
   AppStrings.loginAuxHint: 'Enable Google/Apple in Firebase Auth. For Apple, add the Sign in with Apple capability in Xcode.',
   AppStrings.loginFirebaseMissing:
-      'Firebase could not start. Add console files (google-services.json, GoogleService-Info.plist) and run: flutterfire configure. You can still open the map for now.',
+      'Firebase could not start (configuration, network, or an init error). Make sure google-services.json / GoogleService-Info.plist match your project. You can still open the map for now.',
+  AppStrings.loginFirebaseDetailLabel: 'Error details:',
+  AppStrings.loginHeroSubtitle: 'Sign in to use the station and parking map.',
+  AppStrings.loginChangePhone: 'Change number',
   AppStrings.loginLanguagePl: 'Polski',
   AppStrings.loginLanguageEn: 'English',
   AppStrings.mapSearchHint: 'Search for stations, parking...',
@@ -243,25 +249,20 @@ final Map<String, String> _en = {
   AppStrings.qrOk: 'OK',
   AppStrings.qrInvalidCode: 'Invalid code (Base64 with JSON required)',
   AppStrings.qrStationNotInApp: 'Unknown station in the app: %s',
+  AppStrings.qrResolvingStation: 'Looking up station…',
   AppStrings.parkOpenPageTitle: 'Park',
   AppStrings.parkOpenShort: 'Place the bike in the designated area, then show the code below to the reader to open the latch.',
-  AppStrings.parkOpenNextButton: 'Next: lock code',
-  AppStrings.parkClosePageTitle: 'Lock latch',
+  AppStrings.stationFlowManualLockHint:
+      'Lock the latch after parking or after pick-up at the station yourself — the app does not show a separate lock code.',
   AppStrings.parkFlowQrOpenCaption: 'Code: open',
-  AppStrings.parkFlowQrCloseCaption: 'Code: lock (show to the reader right away)',
-  AppStrings.parkFlowCloseBeforeQr: 'When ready, show this code — it requests an immediate lock at the reader.',
   AppStrings.parkFlowSlotHint: 'Slot number',
   AppStrings.parkFlowDoneButton: 'Done',
   AppStrings.pickupTitle: 'Pick up',
   AppStrings.pickupOpenCaption: 'Code: open station (show to the reader to unlock)',
   AppStrings.pickupIntro:
-      'Show the open code, remove the bike. Want to lock the empty slot right away? Use the button for the lock code.',
+      'Show the open code to the reader and remove the bike. Lock the latch at the station yourself after pick-up.',
   AppStrings.pickupFlowSlotHint: 'Slot number',
   AppStrings.pickupFlowDoneButton: 'Done',
-  AppStrings.pickupLockNowButton: 'Lock now (QR code)',
-  AppStrings.pickupClosePageTitle: 'Lock after pick-up',
-  AppStrings.pickupCloseCaption: 'Code: lock',
-  AppStrings.pickupCloseBeforeQr: 'Show this to the reader right after removing the bike if you want to lock the empty slot immediately.',
   AppStrings.reservationsTitle: 'Active reservations',
   AppStrings.reservationsEmpty: 'No active reservations.',
   AppStrings.reservationsStart: 'Start',

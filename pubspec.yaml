@@ -59,6 +59,12 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+# path_provider_foundation 2.6+ pulls in package:objective_c (FFI). On iOS
+# Simulator the bundled objective_c.framework can be built for device only
+# (mach-o platform iOS vs iOS-simulator). 2.5.1 uses the classic plugin path.
+dependency_overrides:
+  path_provider_foundation: 2.5.1
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

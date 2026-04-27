@@ -35,7 +35,8 @@ class UserFirestoreRepository {
   Future<bool> needsProfileSetup(String uid) async {
     final doc = await _db.collection(usersCollection).doc(uid).get();
     if (!doc.exists) return true;
-    if (doc.data()!['profileCompleted'] == true) return false;
+    final data = doc.data();
+    if (data?['profileCompleted'] == true) return false;
     return true;
   }
 

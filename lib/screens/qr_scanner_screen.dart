@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mdm_sport/l10n/translations.dart';
 import 'package:mdm_sport/data/qr_payload.dart';
 import 'package:mdm_sport/data/station_entry_flow.dart';
 import 'package:mdm_sport/data/stations_repository.dart';
+import 'package:mdm_sport/data/stations_sync_service.dart';
 import 'package:mdm_sport/screens/station_park_flow_screen.dart';
 import 'package:mdm_sport/screens/station_pickup_flow_screen.dart';
 import 'package:mdm_sport/theme/app_theme.dart';
@@ -20,30 +22,37 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _scanned = false;
+  bool _resolving = false;
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_scanned) return;
-    final raw = capture.barcodes.firstOrNull?.rawValue;
-    if (raw == null || raw.isEmpty) return;
-    final pole = parsePoleQrPayloadFromBase64(raw);
-    if (pole == null) {
-      return;
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_scanned || _resolving) return;
+    PoleQrPayload? pole;
+    for (final b in capture.barcodes) {
+      final raw = b.rawValue;
+      if (raw == null || raw.isEmpty) continue;
+      pole = parsePoleQrPayloadFromBase64(raw);
+      if (pole != null) break;
     }
-    final station = getStationById(pole.stationId);
-    if (station == null) {
-      _scanned = true;
-      _controller.stop();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(AppStrings.qrStationNotInApp).replaceFirst('%s', pole.stationId))),
-        );
-        Navigator.of(context).pop();
-      }
-      return;
+    if (pole == null) return;
+    if (kDebugMode) {
+      debugPrint(
+        'QrScannerScreen: parsed pole stationId="${pole.stationId}" slot=${pole.slot}',
+      );
     }
+    setState(() => _resolving = true);
     _scanned = true;
     _controller.stop();
+    var station = getStationById(pole.stationId);
+    station ??= await StationsSyncService().resolveStationForQrScan(pole.stationId);
     if (!mounted) return;
+    setState(() => _resolving = false);
+    if (station == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(AppStrings.qrStationNotInApp).replaceFirst('%s', pole.stationId))),
+      );
+      Navigator.of(context).pop();
+      return;
+    }
     final next = switch (widget.flow) {
       StationEntryFlow.park => StationParkOpenStepScreen(station: station, initialSlot: pole.slot),
       StationEntryFlow.pickup => StationPickupScreen(station: station, initialSlot: pole.slot),
@@ -71,6 +80,26 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               onDetect: _onDetect,
             ),
           ),
+          if (_resolving)
+            Positioned.fill(
+              child: ColoredBox(
+                color: const Color(0xCC000000),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: AppColors.accentYellowDark),
+                      const SizedBox(height: 16),
+                      Text(
+                        t(AppStrings.qrResolvingStation),
+                        style: const TextStyle(color: AppColors.textOnDark, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           SafeArea(
             child: Column(
               children: [

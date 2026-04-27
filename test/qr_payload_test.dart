@@ -33,6 +33,14 @@ void main() {
       expect(p.slot, 2);
     });
 
+    test('stationId trimmed from JSON', () {
+      final json = '{"stationId":"  st-1  ","slot":2}';
+      final plain = base64.encode(utf8.encode(json));
+      final p = parsePoleQrPayloadFromBase64(plain)!;
+      expect(p.stationId, 'st-1');
+      expect(p.slot, 2);
+    });
+
     test('obfuscated base64', () {
       final json = '{"stationId":"st-1","slot":1}';
       final obf = encodePayloadAsBase64Qr(json);
@@ -45,6 +53,44 @@ void main() {
       final json = '{"stationId":"x"}';
       final plain = base64.encode(utf8.encode(json));
       expect(parsePoleQrPayloadFromBase64(plain), isNull);
+    });
+
+    test('id zamiast stationId', () {
+      final json = '{"id":"5","slot":2}';
+      final p = parsePoleQrPayloadFromBase64(base64.encode(utf8.encode(json)))!;
+      expect(p.stationId, '5');
+      expect(p.slot, 2);
+    });
+
+    test('stationId numeryczne w JSON (int)', () {
+      final json = '{"stationId":3,"slot":1}';
+      final p = parsePoleQrPayloadFromBase64(base64.encode(utf8.encode(json)))!;
+      expect(p.stationId, '3');
+      expect(p.slot, 1);
+    });
+
+    test('czysty JSON (bez base64) — ze słupka / nalepki', () {
+      final p = parsePoleQrPayloadFromBase64('{"stationId":"1","slot":2}')!;
+      expect(p.stationId, '1');
+      expect(p.slot, 2);
+    });
+
+    test('ładunek z URL — query', () {
+      final json = '{"stationId":"7","slot":2}';
+      final b = base64.encode(utf8.encode(json));
+      final url = 'https://example.com/x?d=$b';
+      final p = parsePoleQrPayloadFromBase64(url)!;
+      expect(p.stationId, '7');
+      expect(p.slot, 2);
+    });
+
+    test('base64 ze znakami nowej linii', () {
+      final json = '{"id":"2","slot":3}';
+      final b = base64.encode(utf8.encode(json));
+      final withNl = '${b.substring(0, 8)}\n${b.substring(8)}';
+      final p = parsePoleQrPayloadFromBase64(withNl)!;
+      expect(p.stationId, '2');
+      expect(p.slot, 3);
     });
   });
 }

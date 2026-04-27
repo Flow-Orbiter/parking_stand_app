@@ -9,6 +9,7 @@ import 'package:mdm_sport/l10n/translations.dart';
 import 'package:mdm_sport/data/location_helper.dart';
 import 'package:mdm_sport/data/models/station.dart';
 import 'package:mdm_sport/data/stations_repository.dart';
+import 'package:mdm_sport/data/stations_sync_service.dart';
 import 'package:mdm_sport/theme/app_theme.dart';
 import 'package:mdm_sport/screens/qr_scanner_screen.dart';
 import 'package:mdm_sport/data/station_entry_flow.dart';
@@ -65,10 +66,31 @@ class _MapScreenState extends State<MapScreen> {
     }).toSet();
   }
 
+  void _onStationsDataRevision() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _reloadStationsFromFirebase() async {
+    try {
+      final u = FirebaseAuth.instance.currentUser;
+      if (u != null) {
+        await u.getIdToken(true);
+      }
+      await StationsSyncService().syncStationsFromFirestore();
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('MapScreen station reload: $e\n$st');
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    stationsDataRevision.addListener(_onStationsDataRevision);
     _searchFocusNode.addListener(_onSearchFocusChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reloadStationsFromFirebase());
     final u = FirebaseAuth.instance.currentUser;
     if (u != null) {
       UserFirestoreRepository()
@@ -83,6 +105,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    stationsDataRevision.removeListener(_onStationsDataRevision);
     _searchFocusNode.removeListener(_onSearchFocusChange);
     _searchFocusNode.dispose();
     _searchController.dispose();

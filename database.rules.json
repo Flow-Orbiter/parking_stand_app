@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "stations": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "public": {
+      "stations": {
+        ".read": true,
+        ".write": false
+      }
+    }
+  }
+}

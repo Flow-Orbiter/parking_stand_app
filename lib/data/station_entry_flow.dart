@@ -1,7 +1,7 @@
 /// Skąd użytkownik wchodzi w [QrScannerScreen] — rozgałęzienie po skanie słupka.
 enum StationEntryFlow {
-  /// Zaparkuj — flow parkowania (open → close).
+  /// Zaparkuj — kod otwarcia; zamknięcie rygla ręcznie przy stacji.
   park,
-  /// Odbierz — flow odbioru (open, opcjonalnie close).
+  /// Odbierz — kod otwarcia; zamknięcie rygla ręcznie przy stacji.
   pickup,
 }
