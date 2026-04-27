@@ -18,7 +18,7 @@ enum QrStationAction {
 }
 
 String _actionToJsonValue(QrStationAction a) =>
-    a == QrStationAction.open ? 'open' : 'close';
+    a == QrStationAction.open ? 'OPEN' : 'CLOSE';
 
 /// Znak zastępczy: nie występuje w alfabecie base64; zabezpiecza prawdziwe `0` przed obfuskacją cyfr 1..8.
 const _literalZeroPlaceholder = '~';
@@ -39,14 +39,20 @@ final Map<String, String> _deobfuscateB64Char = {
 };
 
 /// Zwykły ciąg base64 → treść do wyświetlenia w QR (obfuskacja).
+///
+/// Canonical backend format:
+/// - `~<mapped-char>` dla cyfr 1..8
+/// - `~~` dla literalnego `~`
 String obfuscateBase64ForQr(String standardBase64) {
   final buf = StringBuffer();
   for (var i = 0; i < standardBase64.length; i++) {
     final c = standardBase64[i];
-    if (c == '0') {
-      buf.write(_literalZeroPlaceholder);
+    if (c == _literalZeroPlaceholder) {
+      buf.write('~~');
+    } else if (_obfuscateB64Digit.containsKey(c)) {
+      buf.write('~${_obfuscateB64Digit[c]}');
     } else {
-      buf.write(_obfuscateB64Digit[c] ?? c);
+      buf.write(c);
     }
   }
   return buf.toString();
@@ -54,6 +60,38 @@ String obfuscateBase64ForQr(String standardBase64) {
 
 /// Odczyt z QR (obfuskacja → base64 do zdekodowania `base64.decode`).
 String deobfuscateBase64FromQr(String fromQr) {
+  // Support both formats:
+  // 1) canonical backend `~X` escape encoding
+  // 2) legacy app format where `0` was replaced by bare `~`
+  final hasEscapePairs = RegExp(r'~[~0123\(\)@\$]').hasMatch(fromQr);
+  if (hasEscapePairs) {
+    final buf = StringBuffer();
+    var i = 0;
+    while (i < fromQr.length) {
+      final c = fromQr[i];
+      if (c != _literalZeroPlaceholder) {
+        buf.write(c);
+        i++;
+        continue;
+      }
+      if (i + 1 >= fromQr.length) {
+        // best-effort compatibility with legacy payloads
+        buf.write('0');
+        i++;
+        continue;
+      }
+      final next = fromQr[i + 1];
+      if (next == _literalZeroPlaceholder) {
+        buf.write(_literalZeroPlaceholder);
+      } else {
+        buf.write(_deobfuscateB64Char[next] ?? next);
+      }
+      i += 2;
+    }
+    return buf.toString();
+  }
+
+  // Legacy fallback: `~` represented literal zero.
   final buf = StringBuffer();
   for (var i = 0; i < fromQr.length; i++) {
     final c = fromQr[i];
@@ -225,13 +263,20 @@ String buildStationActionPayload({
   required String stationId,
   required int slot,
   required QrStationAction action,
+  String? opId,
+  String userId = 'local-user',
   String deviceId = 'local',
 }) {
+  final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final map = {
+    'v': 'v1',
+    'kind': 'station_action',
     'action': _actionToJsonValue(action),
     'stationId': stationId,
     'slot': slot,
-    'ts': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    'opId': opId ?? '${stationId}_${slot}_$nowSeconds',
+    'userId': userId,
+    'ts': nowSeconds,
     'deviceId': deviceId,
   };
   return jsonEncode(map);
