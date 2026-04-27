@@ -15,7 +15,7 @@ enum QrStationAction {
 }
 
 String _actionToJsonValue(QrStationAction a) =>
-    a == QrStationAction.open ? 'open' : 'close';
+    a == QrStationAction.open ? 'OPEN' : 'CLOSE';
 
 /// Znak zastępczy: nie występuje w alfabecie base64; zabezpiecza prawdziwe `0` przed obfuskacją cyfr 1..8.
 const _literalZeroPlaceholder = '~';
@@ -96,6 +96,10 @@ PoleQrPayload? _polePayloadFromDecodedJson(String utf8Json) {
     final dynamic decoded = jsonDecode(utf8Json);
     if (decoded is! Map) return null;
     final m = Map<String, dynamic>.from(decoded);
+    final kind = m['kind'] as String?;
+    if (kind != null && kind != 'pole') return null;
+    final v = m['v'] as String?;
+    if (v != null && v != 'v1') return null;
     final id = m['stationId'] as String?;
     if (id == null || id.isEmpty) return null;
     // Compatibility fallback for external generators with a typo: `slod` instead of `slot`.
@@ -132,12 +136,18 @@ String buildStationActionPayload({
   required String stationId,
   required int slot,
   required QrStationAction action,
+  required String opId,
+  String userId = 'local-user',
   String deviceId = 'local',
 }) {
   final map = {
+    'v': 'v1',
+    'kind': 'station_action',
     'action': _actionToJsonValue(action),
     'stationId': stationId,
     'slot': slot,
+    'opId': opId,
+    'userId': userId,
     'ts': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     'deviceId': deviceId,
   };

@@ -20,6 +20,7 @@ class StationPickupScreen extends StatefulWidget {
 class _StationPickupScreenState extends State<StationPickupScreen> {
   int _slot = 1;
   late final TextEditingController _slotController;
+  late final String _opId;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _StationPickupScreenState extends State<StationPickupScreen> {
     } else {
       _slotController = TextEditingController(text: '1');
     }
+    _opId = '${widget.station.id}_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   @override
@@ -44,6 +46,7 @@ class _StationPickupScreenState extends State<StationPickupScreen> {
       stationId: widget.station.id,
       slot: _slot,
       action: QrStationAction.open,
+      opId: _opId,
     );
     return encodePayloadAsBase64Qr(json);
   }
@@ -59,6 +62,7 @@ class _StationPickupScreenState extends State<StationPickupScreen> {
         builder: (_) => StationPickupCloseQrScreen(
           station: widget.station,
           slot: _slot,
+          opId: _opId,
         ),
       ),
     );
@@ -156,16 +160,19 @@ class StationPickupCloseQrScreen extends StatelessWidget {
     super.key,
     required this.station,
     required this.slot,
+    required this.opId,
   });
 
   final Station station;
   final int slot;
+  final String opId;
 
   String get _closeB64 {
     final json = buildStationActionPayload(
       stationId: station.id,
       slot: slot,
       action: QrStationAction.close,
+      opId: opId,
     );
     return encodePayloadAsBase64Qr(json);
   }

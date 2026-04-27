@@ -21,6 +21,7 @@ class StationParkOpenStepScreen extends StatefulWidget {
 class _StationParkOpenStepScreenState extends State<StationParkOpenStepScreen> {
   int _slot = 1;
   final _slotController = TextEditingController(text: '1');
+  late String _opId;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _StationParkOpenStepScreenState extends State<StationParkOpenStepScreen> {
       _slot = s;
       _slotController.text = '$s';
     }
+    _opId = '${widget.station.id}_${DateTime.now().millisecondsSinceEpoch}';
     AppStorage.setLastBikeStationId(widget.station.id);
   }
 
@@ -44,6 +46,7 @@ class _StationParkOpenStepScreenState extends State<StationParkOpenStepScreen> {
       stationId: widget.station.id,
       slot: _slot,
       action: QrStationAction.open,
+      opId: _opId,
     );
     return encodePayloadAsBase64Qr(json);
   }
@@ -54,6 +57,7 @@ class _StationParkOpenStepScreenState extends State<StationParkOpenStepScreen> {
         builder: (_) => StationParkCloseQrScreen(
           station: widget.station,
           slot: _slot,
+          opId: _opId,
         ),
       ),
     );
@@ -135,16 +139,19 @@ class StationParkCloseQrScreen extends StatelessWidget {
     super.key,
     required this.station,
     required this.slot,
+    required this.opId,
   });
 
   final Station station;
   final int slot;
+  final String opId;
 
   String get _closeB64 {
     final json = buildStationActionPayload(
       stationId: station.id,
       slot: slot,
       action: QrStationAction.close,
+      opId: opId,
     );
     return encodePayloadAsBase64Qr(json);
   }
